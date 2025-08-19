@@ -2,48 +2,53 @@ use std::io::Write;
 use std::path::{PathBuf, Path};
 use std::process::Command;
 
-pub fn run(root: &PathBuf){
-    // bash export USER_FA_DIR="/home/stli/stproj/tryrs/testf"
-    println!("Check if USER_FA_DIR={} is set", std::env::var("USER_FA_DIR").unwrap());
+pub fn run(){
+    match create_proj_folder(){
+        Ok(_) => println!("check: sucessfully set up faproj folder"),
+        Err(e) => println!("check: fail to set up faproj folder due to {}", e),
+    }
     check_r_py();
-    create_proj_folder().expect("fail to set up proj folder");
-    println!("✓ faproj init at {}", root.display());
+    println!("✓ fa2 init at USER_FA_DIR={}", std::env::var("USER_FA_DIR").unwrap());
 }
 
 fn check_r_py() {
-    println!("Check if R, Ptyhon, and Quarto are installed?");
+    println!("check: install R, Ptyhon, and Quarto");
     Command::new("R")
         .arg("--version")
         .output()
-        .expect("✘ R is not installed");
+        .expect("✘ R not installed");
     Command::new("python3")
         .arg("--version")
         .output()
-        .expect("✘ Python is not installed");
+        .expect("✘ Python not installed");
     Command::new("quarto")
         .arg("--version")
         .output()
-        .expect("✘ Quarto is not installed");
+        .expect("✘ Quarto not installed");
 }
 
 fn create_proj_folder() -> anyhow::Result<()>{
-    let dir1 = PathBuf::from(std::env::var("USER_FA_DIR").unwrap());
-    let dir2 = std::env::current_dir().unwrap();
-    assert_eq!(dir1, dir2, "cd fa2 root to init");
-    // create faproj dir
-    let path_proj = dir2.join("faproj/job");
-    let path_box = dir2.join("faproj/box/stbox");
-    let path_proj_conf = dir2.join("faproj/config.toml");
-    std::fs::create_dir_all(path_proj)?;
-    std::fs::create_dir_all(path_box)?;
-    std::fs::File::create(path_proj_conf)?;
-    // write content to box
-    let path_box_r = dir2.join("faproj/box/stbox/box.R");
-    copy_box(&path_box_r)?;
-    // write content to yaml
-    let path_stbox = dir2.join("faproj/box");
-    let path_box_yml = dir2.join("faproj/box/config.yml");
-    write_r_yml(&path_stbox, &path_box_yml)?;
+    // USER_FA_DIR="/home/stproj/testf" + faproj
+    let path_root = PathBuf::from(std::env::var("USER_FA_DIR").unwrap());
+    let path_proj_conf = path_root.join("faproj/config.toml");
+    let path_box = path_root.join("faproj/box/stbox");
+    let path_proj = path_root.join("faproj/job");
+    // do not init again
+    if path_proj_conf.exists(){
+        eprintln!("✘ do not init again");
+    }else{
+        // create faproj dir
+        std::fs::File::create(path_proj_conf)?;
+        std::fs::create_dir_all(path_box)?;
+        std::fs::create_dir_all(path_proj)?;
+        // write to box.R
+        let path_box_r = path_root.join("faproj/box/stbox/box.R");
+        copy_box(&path_box_r)?;
+        // write to R config.yaml
+        let path_stbox = path_root.join("faproj/box");
+        let path_box_yml = path_root.join("faproj/box/config.yml");
+        write_r_yml(&path_stbox, &path_box_yml)?;
+    }
     Ok(())
 }
 
@@ -61,6 +66,7 @@ fn write_r_yml(path_stbox: &Path, path_box_yml: &Path) -> anyhow::Result<()>{
         .write(true)
         .create(true)
         .open(path_box_yml)?;
-    file_yml.write(ctx.as_bytes()).unwrap();
+    file_yml.write(ctx.as_bytes())?;
     Ok(())
 }
+

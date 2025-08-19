@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 
 mod init;
-mod new;
+pub mod new;
 
 use crate::cli::new::Job;
 
@@ -10,7 +10,6 @@ use crate::cli::new::Job;
 #[derive(Parser)]
 #[command(version, about)]
 pub struct Cli{
-    /// fa2 home dir
     #[arg(long, hide(true), env = "USER_FA_DIR")]
     pub home: PathBuf,
     #[command(subcommand)]
@@ -20,11 +19,7 @@ pub struct Cli{
 #[derive(Subcommand)]
 pub enum FCommand{
     /// Init fa2 home dir and faudit.toml
-    Init{
-        /// fa2 home dir
-        #[arg(short, long, default_value = ".")]
-        root: PathBuf, 
-    }, 
+    Init, 
     /// Create a new audit job
     New(Job), 
     /// Generate quarto docs
@@ -38,10 +33,10 @@ pub enum FCommand{
 }
 
 impl FCommand{
-    pub fn run(&self){
+    pub fn run(self){
         match self{
-            Self::Init { root } => init::run(root),
-            Self::New( job ) => job.run(),
+            Self::Init => init::run(),
+            Self::New( job ) => new::run(job),
             Self::Report => println!("report fa2"),
             Self::Serve => println!("run axum web server"),
             Self::Check => println!("check financial numbers"),
