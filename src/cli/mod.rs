@@ -2,7 +2,8 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 
 mod init;
-pub mod new;
+mod new;
+mod report;
 
 use crate::cli::new::Job;
 
@@ -23,7 +24,17 @@ pub enum FCommand{
     /// Create a new audit job
     New(Job), 
     /// Generate quarto docs
-    Report, 
+    Report{
+        /// Query job client name
+        #[arg(short, long)]
+        client: String, 
+        /// Query job client year
+        #[arg(short, long)]
+        year: String, 
+        /// Quarto other args
+        #[arg(short, long)]
+        qargs: Vec<String>, 
+    }, 
     /// Run a web server
     Serve, 
     /// Reconcile financial data
@@ -37,7 +48,7 @@ impl FCommand{
         match self{
             Self::Init => init::run(),
             Self::New( job ) => new::run(job),
-            Self::Report => println!("report fa2"),
+            Self::Report { client, year, qargs } => report::run(&client, &year, &qargs),
             Self::Serve => println!("run axum web server"),
             Self::Check => println!("check financial numbers"),
             Self::Show => println!("list fa2 folder structure"),

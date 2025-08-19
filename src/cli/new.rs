@@ -4,24 +4,26 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Default, Serialize, Deserialize)]
 pub struct Config{
-    jobs: Vec<Job>,
+    pub jobs: Vec<Job>,
 }
 
 #[derive(Default, Args, Serialize, Deserialize)]
 pub struct Job{
     /// Client name
     #[arg(short, long)]
-    client: String, 
+    pub client: String, 
     /// Financial year
     #[arg(short, long)]
-    year: String, 
+    pub year: String, 
     /// PBC documents
     #[arg(value_parser(clap::value_parser!(PathBuf)))]
     pbc: Vec<PathBuf>, 
 }
 
 pub fn run(job: Job) {
+    // to lowercase
     let Job { client, year, pbc } = &job;
+    let client = client.to_lowercase();
     // job/client [same name]/year [2024, 2025]
     let path_root = PathBuf::from(std::env::var("USER_FA_DIR").unwrap());
     let path_proj_conf = path_root.join("faproj/config.toml");

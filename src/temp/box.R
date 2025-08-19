@@ -25,11 +25,6 @@ check_r_pkg <- function() {
   }
 }
 
-#' @description "Check if the required Python packages are installed"
-#' @export
-# def check_py_pkg():
-#     pass
-
 #' @description "Create RStudio project"
 #' @export
 create_rsproj <- function() {
