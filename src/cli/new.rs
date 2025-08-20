@@ -1,6 +1,7 @@
 use std::path::{PathBuf, Path};
 use clap::Args;
 use serde::{Deserialize, Serialize};
+use toml::Table;
 
 #[derive(Serialize, Deserialize)]
 struct Config{
@@ -71,11 +72,20 @@ fn copy_include() -> anyhow::Result<()> {
 }
 
 fn load_config_toml(job: Job, path_proj_conf: &Path) -> anyhow::Result<()>{
-    let ctx_in = std::fs::read_to_string(path_proj_conf)?;
-    let mut existing_jobs = toml::from_str::<Config>(&ctx_in)?;
-    existing_jobs.jobs.push(job);
-    // add new job to config.toml
-    let ctx_out = toml::to_string_pretty(&existing_jobs)?;
-    std::fs::write(path_proj_conf, ctx_out)?;
+    let ctx = std::fs::read_to_string(path_proj_conf)?;
+    if let Ok(res) = ctx.parse::<Table>(){
+        // if it is the first time
+        if res.is_empty(){
+            let config = Config{jobs: vec![job]};
+            let ctx_out = toml::to_string_pretty(&config)?;
+            std::fs::write(path_proj_conf, ctx_out)?;
+        }else{
+            let mut existing_jobs = toml::from_str::<Config>(&ctx)?;
+            existing_jobs.jobs.push(job);
+            let ctx_out = toml::to_string_pretty(&existing_jobs)?;
+            std::fs::write(path_proj_conf, ctx_out)?;
+        }
+    }
     Ok(())
 }
+

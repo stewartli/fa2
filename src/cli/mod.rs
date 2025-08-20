@@ -19,9 +19,9 @@ pub struct Cli{
 
 #[derive(Subcommand)]
 pub enum FCommand{
-    /// Init fa2 home dir and faudit.toml
+    /// Init fa2 config.toml
     Init, 
-    /// Create a new audit job
+    /// Create a new job
     New(Job), 
     /// Generate quarto docs
     Report{
