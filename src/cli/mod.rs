@@ -4,6 +4,7 @@ use clap::{Parser, Subcommand};
 mod init;
 mod new;
 mod report;
+mod serve;
 
 use crate::cli::new::Job;
 
@@ -36,7 +37,11 @@ pub enum FCommand{
         qargs: Vec<String>, 
     }, 
     /// Run a web server
-    Serve, 
+    Serve{
+        /// IP addr serve
+        #[arg(short, long, default_value = "127.0.0.1:8090")]
+        addr: String,
+    }, 
     /// Reconcile financial data
     Check, 
     /// List a job folder structure
@@ -49,7 +54,7 @@ impl FCommand{
             Self::Init => init::run(),
             Self::New( job ) => new::run(job),
             Self::Report { client, year, qargs } => report::run(&client, &year, &qargs),
-            Self::Serve => println!("run axum web server"),
+            Self::Serve { addr } => serve::run(&addr),
             Self::Check => println!("check financial numbers"),
             Self::Show => println!("list fa2 folder structure"),
         }
