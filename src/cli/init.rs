@@ -5,7 +5,7 @@ use std::process::Command;
 pub fn run(){
     match create_proj_folder(){
         Ok(_) => println!("check: sucessfully set up faproj folder"),
-        Err(e) => println!("check: fail to set up faproj folder due to {}", e),
+        Err(e) => eprintln!("check: fail to set up faproj folder due to {}", e),
     }
     check_r_py();
     println!("✓ fa2 init at USER_FA_DIR={}", std::env::var("USER_FA_DIR").unwrap());

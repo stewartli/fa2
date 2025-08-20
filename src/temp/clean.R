@@ -1,7 +1,7 @@
 library(magrittr)
 
 config <- config::get(
-  file = file.path(Sys.getenv("USER_FA_DIR"), "/box/config.yml")
+  file = file.path(Sys.getenv("USER_FA_DIR"), "/faproj/box/config.yml")
 )
 
 options(box.path = config$rbox)
@@ -11,4 +11,3 @@ box::use(stbox / box)
 box$hello()
 box$check_r_pkg()
 box$create_rsproj()
-box$show_activity()

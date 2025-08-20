@@ -2,12 +2,12 @@ use std::path::{PathBuf, Path};
 use clap::Args;
 use serde::{Deserialize, Serialize};
 
-#[derive(Default, Serialize, Deserialize)]
-pub struct Config{
-    pub jobs: Vec<Job>,
+#[derive(Serialize, Deserialize)]
+struct Config{
+    jobs: Vec<Job>,
 }
 
-#[derive(Default, Args, Serialize, Deserialize)]
+#[derive(Args, Serialize, Deserialize)]
 pub struct Job{
     /// Client name
     #[arg(short, long)]
@@ -40,7 +40,7 @@ pub fn run(job: Job) {
     std::env::set_current_dir(path_year).unwrap();
     copy_include().expect("fail to copy temp files to client");
     // write job to config.toml 
-    load_config_toml(job, &path_proj_conf);
+    load_config_toml(job, &path_proj_conf).expect("fail to modify config.toml");
 }
 
 fn create_job_folder(path_year: &Path, pbc_raw: &[PathBuf]) -> anyhow::Result<()> {
@@ -60,21 +60,22 @@ fn create_job_folder(path_year: &Path, pbc_raw: &[PathBuf]) -> anyhow::Result<()
 }
 
 fn copy_include() -> anyhow::Result<()> {
-    std::fs::File::create("awp/clean.R")?;
+    std::fs::File::create("pbc/clean.R")?;
     let ctx_clean = include_str!("../temp/clean.R");
-    std::fs::write("awp/clean.R", ctx_clean)?;
-    // awp and report folder
+    std::fs::write("pbc/clean.R", ctx_clean)?;
+    // pbc and report folder
     std::fs::File::create("report/report.qmd")?;
     let ctx_report = include_str!("../temp/report.qmd");
     std::fs::write("report/report.qmd", ctx_report)?;
     Ok(())
 }
 
-fn load_config_toml(job: Job, path_proj_conf: &Path){
-    let ctx_in = std::fs::read_to_string(path_proj_conf).expect("fail to read config.toml");
-    let mut existing_jobs = toml::from_str::<Config>(&ctx_in).expect("fail to deserialize toml");
+fn load_config_toml(job: Job, path_proj_conf: &Path) -> anyhow::Result<()>{
+    let ctx_in = std::fs::read_to_string(path_proj_conf)?;
+    let mut existing_jobs = toml::from_str::<Config>(&ctx_in)?;
     existing_jobs.jobs.push(job);
     // add new job to config.toml
-    let ctx_out = toml::to_string_pretty(&existing_jobs).expect("fail to serialize to toml");
-    std::fs::write(path_proj_conf, ctx_out).expect("fail to write out config.toml");
+    let ctx_out = toml::to_string_pretty(&existing_jobs)?;
+    std::fs::write(path_proj_conf, ctx_out)?;
+    Ok(())
 }

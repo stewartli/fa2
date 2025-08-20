@@ -12,7 +12,7 @@ pub fn run(client: &str, year: &str, qargs: &[String]){
     if path_report.exists(){
         run_qmd(&path_report, "render", qargs);
     }else{
-        eprintln!("✘ client job not found");
+        eprintln!("✘ client job report not found");
     }
 }
 
@@ -21,11 +21,11 @@ fn run_qmd(path_report: &Path, act: &str, qargs: &[String]){
         .args([act, path_report.to_str().unwrap()])
         .args(qargs)
         .output()
-        .expect("✘ fail to start Quarto process");
+        .expect("✘ fail to start quarto process");
     if qmd.status.success(){
         println!("✓ successfully run quarto {}", act);
     }else{
-        eprintln!("✘ fail to run Quarto {}", act);
+        eprintln!("✘ fail to run quarto {}", act);
     }
 }
 
