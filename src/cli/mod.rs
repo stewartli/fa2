@@ -5,6 +5,7 @@ mod init;
 mod new;
 mod report;
 mod serve;
+mod show;
 
 use crate::cli::new::Job;
 
@@ -56,7 +57,7 @@ impl FCommand{
             Self::Report { client, year, qargs } => report::run(&client, &year, &qargs),
             Self::Serve { addr } => serve::run(&addr),
             Self::Check => println!("check financial numbers"),
-            Self::Show => println!("list fa2 folder structure"),
+            Self::Show => show::run(), 
         }
     }
 }
