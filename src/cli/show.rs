@@ -6,7 +6,14 @@ struct JobFile{
     modify_at: u64, 
 }
 
-pub fn run(){
+impl JobFile{
+    fn print_out(&self){
+        let res_str = format!("\x1b[93m{:<10}\x1b[0m{:>10}{:>10}\n", self.name, self.create_at, self.modify_at);
+        println!("{}", res_str);
+    }
+}
+
+pub fn run(query: String, sort: bool, topn: Option<usize>){
     let path_root = PathBuf::from(std::env::var("USER_FA_DIR").unwrap());
     let path_job = path_root.join("faproj/job");
     // get metadata
@@ -36,8 +43,29 @@ pub fn run(){
         }
     }
     // print out 
-    out.into_iter().for_each(|x| {
-         let res_str = format!("\x1b[93m{:<10}\x1b[0m{:>10}{:>10}\n", x.name, x.create_at, x.modify_at);
-        println!("{}", res_str);
-    });
+    if let Some(n) = topn{
+        if sort{
+            out.sort_by(|a, b| a.modify_at.cmp(&b.modify_at));
+            out.into_iter()
+                .filter(|x| x.name.contains(&query))
+                .take(n)
+                .for_each(|x| x.print_out() );
+        }else{
+            out.into_iter()
+                .filter(|x| x.name.contains(&query))
+                .take(n)
+                .for_each(|x| x.print_out() );
+        }
+    }else{
+        if sort{
+            out.sort_by(|a, b| a.modify_at.cmp(&b.modify_at));
+            out.into_iter()
+                .filter(|x| x.name.contains(&query))
+                .for_each(|x| x.print_out() );
+        }else{
+            out.into_iter()
+                .filter(|x| x.name.contains(&query))
+                .for_each(|x| x.print_out() );
+        }
+    }
 }

@@ -6,6 +6,7 @@ mod new;
 mod report;
 mod serve;
 mod show;
+mod check;
 
 use crate::cli::new::Job;
 
@@ -25,12 +26,26 @@ pub enum FCommand{
     Init, 
     /// Create a new job
     New(Job), 
+    /// List a job folder
+    Show{
+        /// Filter client and year
+        #[arg(short, long, default_value = "")]
+        query: String, 
+        /// Sort by the latest modified time
+        #[arg(short, long, default_value_t = false)]
+        sort: bool,
+        /// Top n
+        #[arg(short, long)]
+        topn: Option<usize>,
+    }, 
+    /// Run an plugin script
+    Check, 
     /// Generate quarto docs
     Report{
-        /// Query job client name
+        /// Report job client name
         #[arg(short, long)]
         client: String, 
-        /// Query job client year
+        /// Report job client year
         #[arg(short, long)]
         year: String, 
         /// Quarto other args
@@ -43,10 +58,6 @@ pub enum FCommand{
         #[arg(short, long, default_value = "127.0.0.1:8090")]
         addr: String,
     }, 
-    /// Reconcile financial data
-    Check, 
-    /// List a job folder structure
-    Show, 
 }
 
 impl FCommand{
@@ -54,10 +65,10 @@ impl FCommand{
         match self{
             Self::Init => init::run(),
             Self::New( job ) => new::run(job),
+            Self::Show { query, sort, topn } => show::run(query, sort, topn), 
+            Self::Check => check::run(),
             Self::Report { client, year, qargs } => report::run(&client, &year, &qargs),
             Self::Serve { addr } => serve::run(&addr),
-            Self::Check => println!("check financial numbers"),
-            Self::Show => show::run(), 
         }
     }
 }

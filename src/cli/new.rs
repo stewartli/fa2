@@ -1,6 +1,6 @@
 /// create a job via fa2 new: 1> from terminal, 2> from config.toml, 3> both, 
 /// 1. config.toml -> path exists <- cli
-/// 2. provide args for client/year/pbc
+/// 2. provide all args for client/year/pbc
 
 use std::path::{PathBuf, Path};
 use clap::Args;
@@ -12,10 +12,10 @@ struct Config{
     jobs: Vec<Job>,
 }
 
-#[derive(Args, Serialize, Deserialize)]
+#[derive(Args, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Job{
     /// Client name
-    #[arg(short, long)]
+    #[arg(short, long, requires_all(["year", "pbc"]))]
     pub client: Option<String>, 
     /// Financial year
     #[arg(short, long)]
@@ -29,23 +29,14 @@ pub fn run(job: Job) {
     let path_root = PathBuf::from(std::env::var("USER_FA_DIR").unwrap());
     let path_proj_conf = path_root.join("faproj/config.toml");
     let path_job = path_root.join("faproj/job");
-    // 1. get a new job from cli
+    // read config.toml
+    let ctx = std::fs::read_to_string(&path_proj_conf).unwrap();
+    // 1. cli -> path exist -> toml
     run_job(&job, &path_job);
-    load_config_toml(job, &path_proj_conf).expect("fail to modify config.toml");
-    // 2. get a new job from config.toml
-    let ctx = std::fs::read_to_string(path_proj_conf).unwrap();
-    let tbl_toml = toml::from_str::<Config>(&ctx).unwrap();
-    // test path_new_job exist
-    let list_new_job = tbl_toml.jobs.into_iter().filter(|x| {
-        let client = x.client.as_deref().unwrap().to_lowercase();
-        let year = x.year.as_deref().unwrap();
-        let path_year = path_job.join(client).join(year);
-        !path_year.exists()
-    }).collect::<Vec<_>>();
-    // create a new job 
-    if list_new_job.is_empty(){
-        println!("✓ path of job in config.toml exists");
-    }else{
+    load_config_toml(job, &path_proj_conf, &ctx).expect("fail to modify config.toml");
+    // 2. toml -> path exist
+    let list_new_job = get_job_toml(&path_job, &ctx);
+    if !list_new_job.is_empty(){
         list_new_job.into_iter().for_each(|x| {
             run_job(&x, &path_job);
         });
@@ -66,11 +57,11 @@ fn run_job(job: &Job, path_job: &Path){
                 std::fs::create_dir_all(&path_year).expect("fail to create client path");
                 create_job_folder(&path_year, pbc).expect("fail to create client folder");
                 println!("✓ client created at {}", path_year.display());
+                // cd to job/client/year and copy clean.R and report.qmd
+                std::env::set_current_dir(path_year).unwrap();
+                copy_include().expect("fail to copy temp files to client");
             }
         }
-        // cd to job/client/year and copy clean.R and report.qmd
-        std::env::set_current_dir(path_year).unwrap();
-        copy_include().expect("fail to copy temp files to client");
     }
 }
 
@@ -101,8 +92,7 @@ fn copy_include() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn load_config_toml(job: Job, path_proj_conf: &Path) -> anyhow::Result<()>{
-    let ctx = std::fs::read_to_string(path_proj_conf)?;
+fn load_config_toml(job: Job, path_proj_conf: &Path, ctx: &String) -> anyhow::Result<()>{
     if let Ok(res) = ctx.parse::<Table>(){
         // if it is the first time
         if res.is_empty(){
@@ -111,11 +101,24 @@ fn load_config_toml(job: Job, path_proj_conf: &Path) -> anyhow::Result<()>{
             std::fs::write(path_proj_conf, ctx_out)?;
         }else{
             let mut existing_jobs = toml::from_str::<Config>(&ctx)?;
-            existing_jobs.jobs.push(job);
-            let ctx_out = toml::to_string_pretty(&existing_jobs)?;
-            std::fs::write(path_proj_conf, ctx_out)?;
+            if !existing_jobs.jobs.contains(&job){
+                existing_jobs.jobs.push(job);
+                let ctx_out = toml::to_string_pretty(&existing_jobs)?;
+                std::fs::write(path_proj_conf, ctx_out)?;
+            }
         }
     }
     Ok(())
 }
 
+fn get_job_toml(path_job: &Path, ctx: &String) -> Vec<Job>{
+    let tbl_toml = toml::from_str::<Config>(ctx).unwrap();
+    // filter out job with path_job does not exist
+    let list_new_job = tbl_toml.jobs.into_iter().filter(|x| {
+        let client = x.client.as_deref().unwrap().to_lowercase();
+        let year = x.year.as_deref().unwrap();
+        let path_year = path_job.join(client).join(year);
+        !path_year.exists()
+    }).collect::<Vec<_>>();
+    list_new_job
+}
