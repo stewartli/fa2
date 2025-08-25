@@ -19,7 +19,7 @@ fn check_config_toml(ctx: String){
             if path_plugin.exists(){
                 run_cmd(ft, &path_plugin);
             }else{
-                eprintln!("plugin file does not exist");
+                eprintln!("✘ plugin file does not exist");
             }
         }
     }
@@ -29,15 +29,15 @@ fn run_cmd(ft: &str, path_plugin: &Path){
     match ft {
         "R" => plugin_cmd("R", path_plugin), 
         "py" => plugin_cmd("python3", path_plugin), 
-        _ => eprintln!("the program does not supported"),
+        _ => eprintln!("✘ the program does not supported"),
     }
 }
 
 fn plugin_cmd(prog: &str, path_plugin: &Path){
     let cmd = Command::new(prog).arg(path_plugin).output().expect("fail to start the program");
     if cmd.status.success(){
-        println!("sucessfully run plugin");
+        println!("✓ sucessfully run plugin");
     }else{
-        eprintln!("fail to run plugin");
+        eprintln!("✘ fail to run plugin");
     }
 }
